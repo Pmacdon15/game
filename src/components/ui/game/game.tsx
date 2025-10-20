@@ -1,73 +1,91 @@
-"use client";
+'use client'
 
-import { useEffect, useRef } from "react";
-import * as PIXI from "pixi.js";
+import { Application, extend, useTick } from '@pixi/react'
+import { Assets, Container, Sprite, type Texture, type Ticker } from 'pixi.js'
+import { useEffect, useState } from 'react'
+
+extend({ Sprite, Container })
+
+declare global {
+	namespace JSX {
+		interface IntrinsicElements {
+			pixiSprite: any
+			pixiContainer: any
+		}
+	}
+}
+
+const Bunny = () => {
+	const [x, setX] = useState(window.innerWidth / 2)
+	const [y, setY] = useState(window.innerHeight / 2)
+	const [keys, setKeys] = useState<{ [key: string]: boolean }>({})
+	const [bunnyTexture, setBunnyTexture] = useState<Texture | null>(null)
+	const speed = 5
+
+	useEffect(() => {
+		Assets.load('/bunny.png').then(setBunnyTexture)
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			setKeys((prevKeys) => ({ ...prevKeys, [e.key]: true }))
+		}
+
+		const handleKeyUp = (e: KeyboardEvent) => {
+			setKeys((prevKeys) => ({ ...prevKeys, [e.key]: false }))
+		}
+
+		window.addEventListener('keydown', handleKeyDown)
+		window.addEventListener('keyup', handleKeyUp)
+
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown)
+			window.removeEventListener('keyup', handleKeyUp)
+		}
+	}, [])
+
+	useTick((ticker: Ticker) => {
+		const delta = ticker.deltaTime
+		if (keys['ArrowUp']) {
+			setY((y) => y - speed * delta)
+		}
+		if (keys['ArrowDown']) {
+			setY((y) => y + speed * delta)
+		}
+		if (keys['ArrowLeft']) {
+			setX((x) => x - speed * delta)
+		}
+		if (keys['ArrowRight']) {
+			setX((x) => x + speed * delta)
+		}
+	})
+
+	if (!bunnyTexture) {
+		return null
+	}
+
+	return <pixiSprite anchor={0.5} texture={bunnyTexture} x={x} y={y} />
+}
 
 export default function Game() {
-  const ref = useRef<HTMLDivElement>(null);
+	const [backgroundTexture, setBackgroundTexture] = useState<Texture | null>(
+		null,
+	)
 
-  useEffect(() => {
-    if (ref.current) {
-      const app = new PIXI.Application();
+	useEffect(() => {
+		Assets.load('/background.png').then(setBackgroundTexture)
+	}, [])
 
-      (async () => {
-        await app.init({ resizeTo: window, backgroundColor: 0x1099bb });
+	if (!backgroundTexture) {
+		return null
+	}
 
-        if (ref.current && ref.current.children.length === 0) {
-          ref.current.appendChild(app.view as unknown as Node);
-        }
-
-        // Load the textures
-        const backgroundTexture = await PIXI.Assets.load("/background.png");
-        const bunnyTexture = await PIXI.Assets.load("/bunny.png");
-
-        // Create the background sprite
-        const background = new PIXI.Sprite(backgroundTexture);
-        background.width = app.screen.width;
-        background.height = app.screen.height;
-        app.stage.addChild(background);
-
-        // Create the bunny sprite
-        const bunny = new PIXI.Sprite(bunnyTexture);
-        bunny.anchor.set(0.5);
-        bunny.x = app.screen.width / 2;
-        bunny.y = app.screen.height / 2;
-        app.stage.addChild(bunny);
-
-        // Keyboard controls
-        const keys: { [key: string]: boolean } = {};
-        const speed = 5;
-
-        window.addEventListener("keydown", (e) => {
-          keys[e.key] = true;
-        });
-
-        window.addEventListener("keyup", (e) => {
-          keys[e.key] = false;
-        });
-
-        app.ticker.add(() => {
-          const delta = app.ticker.deltaTime;
-          if (keys["ArrowUp"]) {
-            bunny.y -= speed * delta;
-          }
-          if (keys["ArrowDown"]) {
-            bunny.y += speed * delta;
-          }
-          if (keys["ArrowLeft"]) {
-            bunny.x -= speed * delta;
-          }
-          if (keys["ArrowRight"]) {
-            bunny.x += speed * delta;
-          }
-        });
-      })();
-
-      return () => {
-        app.destroy(true, true);
-      };
-    }
-  }, []);
-
-  return <div ref={ref} />;
+	return (
+		<Application backgroundColor={0x1099bb} resizeTo={window}>
+			<pixiSprite
+				height={window.innerHeight}
+				texture={backgroundTexture}
+				width={window.innerWidth}
+			/>
+			<Bunny />
+		</Application>
+	)
 }
