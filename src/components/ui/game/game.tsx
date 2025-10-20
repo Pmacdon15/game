@@ -69,10 +69,54 @@ export default function Game() {
 	const [backgroundTexture, setBackgroundTexture] = useState<Texture | null>(
 		null,
 	)
+	const [isGameStarted, setIsGameStarted] = useState(false)
+	const [bgDimensions, setBgDimensions] = useState({ width: 0, height: 0 })
 
 	useEffect(() => {
 		Assets.load('/background.png').then(setBackgroundTexture)
 	}, [])
+
+	useEffect(() => {
+		const updateSize = () => {
+			if (backgroundTexture) {
+				const textureRatio =
+					backgroundTexture.width / backgroundTexture.height
+				let width = window.innerHeight * textureRatio
+				let height = window.innerHeight
+
+				// Ensure no empty sides
+				if (width < window.innerWidth) {
+					width = window.innerWidth
+					height = width / textureRatio
+				}
+
+				setBgDimensions({ width, height })
+			}
+		}
+
+		updateSize()
+		window.addEventListener('resize', updateSize)
+		return () => window.removeEventListener('resize', updateSize)
+	}, [backgroundTexture])
+
+	const handleStartGame = () => {
+		setIsGameStarted(true)
+		// document.documentElement.requestFullscreen()
+	}
+
+	if (!isGameStarted) {
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<button
+					className="rounded-md bg-blue-500 px-4 py-2 text-white"
+					onClick={handleStartGame}
+					type="button"
+				>
+					Start Game
+				</button>
+			</div>
+		)
+	}
 
 	if (!backgroundTexture) {
 		return null
@@ -80,11 +124,16 @@ export default function Game() {
 
 	return (
 		<Application backgroundColor={0x1099bb} resizeTo={window}>
-			<pixiSprite
-				height={window.innerHeight}
-				texture={backgroundTexture}
-				width={window.innerWidth}
-			/>
+			{backgroundTexture && (
+				<pixiSprite
+					anchor={0.5}
+					height={bgDimensions.height}
+					texture={backgroundTexture}
+					width={bgDimensions.width}
+					x={window.innerWidth / 2}
+					y={window.innerHeight / 2}
+				/>
+			)}
 			<Bunny />
 		</Application>
 	)
