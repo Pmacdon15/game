@@ -73,7 +73,7 @@ export default function Game() {
 	const [bgDimensions, setBgDimensions] = useState({ width: 0, height: 0 })
 
 	useEffect(() => {
-		Assets.load('/background.png').then(setBackgroundTexture)
+		Assets.load('/stage1bg.png').then(setBackgroundTexture)
 	}, [])
 
 	useEffect(() => {
