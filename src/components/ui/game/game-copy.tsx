@@ -78,32 +78,71 @@ export default function Game() {
 	const [backgroundTexture, setBackgroundTexture] = useState<Texture | null>(
 		null,
 	)
+	const [isGameStarted, setIsGameStarted] = useState(false)
+	const [showText, setShowText] = useState(true)
 
 	useEffect(() => {
 		Assets.load('/stage1bg.png').then(setBackgroundTexture)
 	}, [])
 
-		
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setShowText(false)
+		}, 3000)
+		return () => clearTimeout(timer)
+	}, [])
+
+	if (!isGameStarted) {
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<button
+					className="rounded-md bg-blue-500 px-4 py-2 text-white"
+					onClick={() => setIsGameStarted(true)}
+					type="button"
+				>
+					Start Game
+				</button>
+			</div>
+		)
+	}
+
+	if (!backgroundTexture) {
+		return null
+	}
 
 	return (
 		<Application backgroundColor={0x1099bb} resizeTo={window}>
 			<pixiContainer>
-				<Bunny />
-				<pixiText
-					alpha={20}
-					anchor={0.5}
-					style={
-						new TextStyle({
-							align: 'center',
-							fontSize: 60,
-							fontWeight: 'bold',
-							fill: '#ffffff',
-						})
-					}
-					text="Welcome"
-					x={-400}
-					y={window.innerHeight / 2 - 200}
+				{/* Add the background image */}
+				<pixiSprite
+					anchor={{ x: 0, y: 0 }}
+					height={window.innerHeight}
+					texture={backgroundTexture}
+					width={window.innerWidth}
+					x={0}
+					y={0}
 				/>
+
+				{/* Add a new container for the text with a higher zIndex */}
+				<pixiContainer zIndex={1}>
+					{showText && (
+						<pixiText
+							anchor={{ x: 0.5, y: 0.5 }}
+							style={
+								new TextStyle({
+									align: 'center',
+									fontSize: 60,
+									fontWeight: 'bold',
+									fill: '#ffffff',
+								})
+							}
+							text="Welcome"
+							x={window.innerWidth / 2}
+							y={window.innerHeight / 2}
+						/>
+					)}
+				</pixiContainer>
+				<Bunny />
 			</pixiContainer>
 		</Application>
 	)
