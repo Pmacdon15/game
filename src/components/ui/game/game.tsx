@@ -1,16 +1,26 @@
 'use client'
 
 import { Application, extend, useTick } from '@pixi/react'
-import { Assets, Container, Sprite, type Texture, type Ticker } from 'pixi.js'
-import { useEffect, useState } from 'react'
+import {
+	Assets,
+	Container,
+	Sprite,
+	Text,
+	TextStyle,
+	type Texture,
+	type Ticker,
+} from 'pixi.js'
+import { useEffect, useRef, useState } from 'react'
+import { gsap } from 'gsap'
 
-extend({ Sprite, Container })
+extend({ Sprite, Container, Text })
 
 declare global {
 	namespace JSX {
 		interface IntrinsicElements {
 			pixiSprite: any
 			pixiContainer: any
+			pixiText: any
 		}
 	}
 }
@@ -65,51 +75,78 @@ const Bunny = () => {
 	return <pixiSprite anchor={0.5} texture={bunnyTexture} x={x} y={y} />
 }
 
+const WelcomeText = () => {
+	const textRef = useRef<Text>(null)
+	const [visible, setVisible] = useState(true)
+
+	useEffect(() => {
+		if (textRef.current) {
+			gsap.fromTo(
+				textRef.current,
+				{ y: window.innerHeight / 2 - 300, alpha: 0 },
+				{
+					y: window.innerHeight / 2,
+					alpha: 1,
+					duration: 1,
+					ease: 'power2.out',
+					onComplete: () => {
+						setTimeout(() => {
+							if (textRef.current) {
+								gsap.to(textRef.current, {
+									alpha: 0,
+									duration: 1,
+									ease: 'power2.in',
+									onComplete: () => {
+										setVisible(false)
+									},
+								})
+							}
+						}, 2000)
+					},
+				},
+			)
+		}
+	}, [])
+
+	if (!visible) {
+		return null
+	}
+
+	return (
+		<pixiText
+			ref={textRef}
+			anchor={{ x: 0.5, y: 0.5 }}
+			style={
+				new TextStyle({
+					align: 'center',
+					fontSize: 60,
+					fontWeight: 'bold',
+					fill: '#ffffff',
+				})
+			}
+			text="Welcome"
+			x={window.innerWidth / 2}
+			y={window.innerHeight / 2}
+		/>
+	)
+}
+
 export default function Game() {
 	const [backgroundTexture, setBackgroundTexture] = useState<Texture | null>(
 		null,
 	)
 	const [isGameStarted, setIsGameStarted] = useState(false)
-	const [bgDimensions, setBgDimensions] = useState({ width: 0, height: 0 })
 
 	useEffect(() => {
 		Assets.load('/stage1bg.png').then(setBackgroundTexture)
 	}, [])
-
-	useEffect(() => {
-		const updateSize = () => {
-			if (backgroundTexture) {
-				const textureRatio =
-					backgroundTexture.width / backgroundTexture.height
-				let width = window.innerHeight * textureRatio
-				let height = window.innerHeight
-
-				// Ensure no empty sides
-				if (width < window.innerWidth) {
-					width = window.innerWidth
-					height = width / textureRatio
-				}
-
-				setBgDimensions({ width, height })
-			}
-		}
-
-		updateSize()
-		window.addEventListener('resize', updateSize)
-		return () => window.removeEventListener('resize', updateSize)
-	}, [backgroundTexture])
-
-	const handleStartGame = () => {
-		setIsGameStarted(true)
-		// document.documentElement.requestFullscreen()
-	}
 
 	if (!isGameStarted) {
 		return (
 			<div className="flex h-screen items-center justify-center">
 				<button
 					className="rounded-md bg-blue-500 px-4 py-2 text-white"
-					onClick={handleStartGame}
+					onClick={() => setIsGameStarted(true)}
 					type="button"
 				>
 					Start Game
@@ -124,17 +161,23 @@ export default function Game() {
 
 	return (
 		<Application backgroundColor={0x1099bb} resizeTo={window}>
-			{backgroundTexture && (
+			<pixiContainer>
+				{/* Add the background image */}
 				<pixiSprite
-					anchor={0.5}
-					height={bgDimensions.height}
+					anchor={{ x: 0, y: 0 }}
+					height={window.innerHeight}
 					texture={backgroundTexture}
-					width={bgDimensions.width}
-					x={window.innerWidth / 2}
-					y={window.innerHeight / 2}
+					width={window.innerWidth}
+					x={0}
+					y={0}
 				/>
-			)}
-			<Bunny />
+
+				{/* Add a new container for the text with a higher zIndex */}
+				<pixiContainer zIndex={1}>
+					<WelcomeText />
+				</pixiContainer>
+				<Bunny />
+			</pixiContainer>
 		</Application>
 	)
 }
