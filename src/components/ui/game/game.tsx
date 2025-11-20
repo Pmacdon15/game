@@ -1,6 +1,7 @@
 'use client'
 
 import { Application, extend, useTick } from '@pixi/react'
+import { gsap } from 'gsap'
 import {
 	Assets,
 	Container,
@@ -11,7 +12,6 @@ import {
 	type Ticker,
 } from 'pixi.js'
 import { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
 
 extend({ Sprite, Container, Text })
 
@@ -114,8 +114,8 @@ const WelcomeText = () => {
 
 	return (
 		<pixiText
-			ref={textRef}
 			anchor={{ x: 0.5, y: 0.5 }}
+			ref={textRef}
 			style={
 				new TextStyle({
 					align: 'center',
@@ -138,7 +138,7 @@ export default function Game() {
 	const [isGameStarted, setIsGameStarted] = useState(false)
 
 	useEffect(() => {
-		Assets.load('/stage1bg.png').then(setBackgroundTexture)
+		Assets.load('/meow-meow-1.png').then(setBackgroundTexture)
 	}, [])
 
 	if (!isGameStarted) {
